@@ -1,7 +1,9 @@
 import qrcode
 import cv2
-
 import streamlit as st
+from io import BytesIO
+from PIL import Image
+import numpy as np
 
 def generate_qr(text):
     """Generează un cod QR pe baza textului/URL-ului."""
@@ -33,18 +35,14 @@ def scan_qr_from_camera():
             st.error("Nu se poate accesa camera.")
             break
 
-
         value, _, _ = detector.detectAndDecode(frame)
-
 
         frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
         stframe.image(frame_rgb, channels="RGB", use_container_width=True)
 
-
         if value:
             decoded_value = value
             break
-
 
         if stop_button:
             break
@@ -52,3 +50,52 @@ def scan_qr_from_camera():
     cap.release()
     return decoded_value
 
+def main():
+    st.title("QR Code Generator & Decoder")
+
+    tabs = st.selectbox("Alege funcționalitatea", ["Generare QR Code", "Decodare QR Code"])
+
+    if tabs == "Generare QR Code":
+        st.subheader("Generează Cod QR")
+        text = st.text_input("Introduceți textul sau URL-ul pentru QR Code")
+
+        if text:
+            img = generate_qr(text)
+
+            buf = BytesIO()
+            img.save(buf, format="PNG")
+            buf.seek(0)
+            st.image(buf, caption="Codul tău QR", use_container_width=True)
+
+            st.download_button(
+                label="Descarcă QR Code-ul",
+                data=buf,
+                file_name="qr_code.png",
+                mime="image/png"
+            )
+
+    elif tabs == "Decodare QR Code":
+        st.subheader("Decodare Cod QR")
+
+        uploaded_file = st.file_uploader("Încarcă o imagine cu QR code", type=["png", "jpg", "jpeg", "gif"])
+        if uploaded_file:
+            image = Image.open(uploaded_file)
+            image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+
+            decoded_text = decode_qr(image)
+
+            if decoded_text:
+                st.success(f"Codul QR conține: {decoded_text}")
+            else:
+                st.error("Nu s-a putut decoda codul QR.")
+
+        if st.button("Scanează cu Camera"):
+            result = scan_qr_from_camera()
+            if result:
+                st.success(f"Cod QR detectat: {result}")
+            else:
+                st.error("Nu s-a detectat niciun Cod QR sau camera a fost oprită.")
+
+
+if __name__ == "__main__":
+    main()
