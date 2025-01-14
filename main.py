@@ -1,4 +1,5 @@
 import qrcode
+import cv2
 
 
 def generate_qr(text):
@@ -8,6 +9,12 @@ def generate_qr(text):
     qr.make(fit=True)
     img = qr.make_image(fill="black", back_color="white")
     return img
+
+def decode_qr(image):
+    """Decodare QR code dintr-o imagine."""
+    detector = cv2.QRCodeDetector()
+    value, _, _ = detector.detectAndDecode(image)
+    return value
 
 
 
