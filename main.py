@@ -79,15 +79,22 @@ def main():
 
         uploaded_file = st.file_uploader("Încarcă o imagine cu QR code", type=["png", "jpg", "jpeg", "gif"])
         if uploaded_file:
-            image = Image.open(uploaded_file)
-            image = cv2.cvtColor(np.array(image), cv2.COLOR_RGB2BGR)
+            try:
+                pil_image = Image.open(uploaded_file)
 
-            decoded_text = decode_qr(image)
+                if pil_image.mode != "RGB":
+                    pil_image = pil_image.convert("RGB")
 
-            if decoded_text:
-                st.success(f"Codul QR conține: {decoded_text}")
-            else:
-                st.error("Nu s-a putut decoda codul QR.")
+                image = cv2.cvtColor(np.array(pil_image), cv2.COLOR_RGB2BGR)
+
+                decoded_text = decode_qr(image)
+
+                if decoded_text:
+                    st.success(f"Codul QR conține: {decoded_text}")
+                else:
+                    st.error("Nu s-a putut decoda codul QR.")
+            except Exception as e:
+                st.error(f"A apărut o eroare la procesarea imaginii: {e}")
 
         if st.button("Scanează cu Camera"):
             result = scan_qr_from_camera()
